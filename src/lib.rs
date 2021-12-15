@@ -1,6 +1,6 @@
 use bytes::Bytes;
-use image::io::Reader;
-use image::ImageError;
+use image::{io::Reader, DynamicImage, ImageBuffer, Rgba};
+use image::{GenericImage, ImageError, Pixel};
 use reqwest::{get, Error};
 use std::{io::Cursor, panic};
 
@@ -18,7 +18,6 @@ pub async fn get_image_list(uri_list: &Vec<String>) -> Result<Vec<Bytes>, Error>
     Ok(result)
 }
 
-
 pub async fn transparent_channel() -> Result<(), ImageError> {
     let img_content = match get_image("https://gw.alicdn.com/imgextra/i3/O1CN01tqFLVn1oddFYIRjUr_!!6000000005248-2-tps-1200-1200.png").await {
         Ok(content) => {
@@ -35,7 +34,37 @@ pub async fn transparent_channel() -> Result<(), ImageError> {
         Ok(img) => img,
         Err(err) => panic!("生成image buff失败 {:?}", err),
     };
+
+    let (gray_image, white_out) = match create_gray_img(&d_image) {
+        Some(a) => a,
+        None => panic!("灰度生成失败！"),
+    };
+
     Ok(())
+}
+
+pub fn create_gray_img(_img: &DynamicImage) -> Option<(ImageBuffer<Rgba<u8>, Vec<u8>>, ImageBuffer<Rgba<u8>, Vec<u8>>)> {
+    if let DynamicImage::ImageRgba8(image) = _img {
+        let (width, height) = image.dimensions();
+        let mut grey_out = ImageBuffer::new(width, height);
+        let mut white_out = ImageBuffer::new(width, height);
+
+        for y in 0..height {
+            for x in 0..width {
+                let p = image.get_pixel(x, y);
+                let current_alpha_channel = p.channels()[3];
+                if current_alpha_channel == 255 {
+                    grey_out.put_pixel(x, y, Pixel::from_channels(0, 0, 0, 255));
+                    white_out.put_pixel(x, y, *p);
+                } else {
+                    white_out.put_pixel(x, y, Pixel::from_channels(255, 255, 255, 255));
+                    grey_out.put_pixel(x, y, Pixel::from_channels(255, 255, 255, 255));
+                }
+            }
+        }
+        return Some((grey_out, white_out));
+    }
+    None
 }
 
 #[cfg(test)]
