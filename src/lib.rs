@@ -50,10 +50,7 @@ pub async fn transparent_channel(uri: &str) -> Result<ImageBuffer<Rgba<u8>, Vec<
 
     img.set_format(image::ImageFormat::Png);
 
-    let d_image = match img.decode() {
-        Ok(img) => img,
-        Err(err) => panic!("生成image buff失败 {:?}", err),
-    };
+    let d_image = img.decode()?;
 
     let out = match create_gray_img(&d_image) {
         Some(a) => a,
