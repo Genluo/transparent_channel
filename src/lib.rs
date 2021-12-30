@@ -44,11 +44,10 @@ pub async fn batch(list: &Vec<String>) -> Result<Vec<ImageBuffer<Rgba<u8>, Vec<u
 }
 
 pub async fn transparent_channel(uri: &str) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>, TransformError> {
-    let (img_content, content_type) = get_image(uri).await?;
+    let (img_content, _) = get_image(uri).await?;
 
     let mut img = Reader::new(Cursor::new(img_content));
 
-    println!("content {:?}", content_type);
     img.set_format(image::ImageFormat::Png);
 
     let d_image = img.decode()?;

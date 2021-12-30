@@ -1,5 +1,5 @@
 use bytes::Bytes;
-use reqwest::{get, Error as RequestError};
+use reqwest::{get, Error as RequestError, header::HeaderValue};
 use crate::request::ContentTypeError;
 
 
@@ -28,23 +28,30 @@ pub enum ContentType {
     Webp,
 }
 
+fn get_img_type(head_value: &HeaderValue) -> Option<ContentType> {
+    if head_value.eq("image/jpeg") {
+        return Some(ContentType::Jpeg);
+    } else if head_value.eq("image/png") {
+        return Some(ContentType::Png);
+    } else if head_value.eq("image/gif") {
+        return Some(ContentType::Gif);
+    }  else if head_value.eq("image/webp") {
+        return Some(ContentType::Webp);
+    }
+    return None;
+}
+
 pub async fn get_image(uri: &str) -> Result<(Bytes, ContentType), GetImageError> {
     let request = get(uri).await?;
     let request_header = request.headers();
     let content_type = request_header.get("content-type");
     if let Some(t) = content_type {
-        let mut current_content_type = ContentType::Gif;
-        if t.eq("image/jpeg") {
-            current_content_type = ContentType::Jpeg;
-        } else if t.eq("image/png") {
-            current_content_type = ContentType::Png;
-        } else if t.eq("image/gif") {
-            current_content_type = ContentType::Gif;
-        }  else if t.eq("image/webp") {
-            current_content_type = ContentType::Webp;
-        } else {
-            return Err(From::from(ContentTypeError::new()));
-        }
+        let current_content_type = match get_img_type(t) {
+            Some(t) => t,
+            None => {
+                return Err(From::from(ContentTypeError::new()));
+            }
+        };
         return Ok((request.bytes().await?, current_content_type));
     }
     return Err(From::from(ContentTypeError::new()));
