@@ -20,6 +20,7 @@ impl From<ContentTypeError> for GetImageError {
     }
 }
 
+#[derive(Debug)]
 pub enum ContentType {
     Gif,
     Jpeg,
@@ -27,14 +28,24 @@ pub enum ContentType {
     Webp,
 }
 
-pub async fn get_image(uri: &str) -> Result<Bytes, GetImageError> {
+pub async fn get_image(uri: &str) -> Result<(Bytes, ContentType), GetImageError> {
     let request = get(uri).await?;
     let request_header = request.headers();
     let content_type = request_header.get("content-type");
     if let Some(t) = content_type {
-        let result = request.bytes().await?;
-        Ok(result)
-    } else {
-        Err(From::from(ContentTypeError::new()))
+        let mut current_content_type = ContentType::Gif;
+        if t.eq("image/jpeg") {
+            current_content_type = ContentType::Jpeg;
+        } else if t.eq("image/png") {
+            current_content_type = ContentType::Png;
+        } else if t.eq("image/gif") {
+            current_content_type = ContentType::Gif;
+        }  else if t.eq("image/webp") {
+            current_content_type = ContentType::Webp;
+        } else {
+            return Err(From::from(ContentTypeError::new()));
+        }
+        return Ok((request.bytes().await?, current_content_type));
     }
+    return Err(From::from(ContentTypeError::new()));
 }
