@@ -1,4 +1,4 @@
-extern crate transparent_channel;
+ extern crate transparent_channel;
 
 use transparent_channel::{batch, TransformError};
 
