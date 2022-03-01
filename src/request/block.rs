@@ -14,6 +14,7 @@ impl From<RequestError> for GetImageError {
         GetImageError::RequestError(err)
     }
 }
+
 impl From<ContentTypeError> for GetImageError {
     fn from(err: ContentTypeError) -> Self {
         GetImageError::ContentTypeError(err)
@@ -41,6 +42,9 @@ fn get_img_type(head_value: &HeaderValue) -> Option<ContentType> {
     return None;
 }
 
+/**
+ * 获取图片的的二进制文件
+ */
 pub async fn get_image(uri: &str) -> Result<(Bytes, ContentType), GetImageError> {
     let request = get(uri).await?;
     let request_header = request.headers();
