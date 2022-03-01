@@ -49,7 +49,22 @@ pub async fn batch(list: &Vec<String>) -> Result<Vec<ImageBuffer<Rgba<u8>, Vec<u
     Ok(result)
 }
 
-pub fn format_image(image_content: Bytes, content_type: ContentType) -> Result<DynamicImage, ImageError> {
+
+async fn transparent_channel(uri: &str) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>, TransformError> {
+    let (img_content, content_type) = get_image(uri).await?;
+
+    let d_image = format_image(img_content, content_type)?;
+
+    let out = match create_gray_img(&d_image) {
+        Some(a) => a,
+        None => panic!("grayscale generation failed"),
+    };
+
+    Ok(out)
+}
+
+
+fn format_image(image_content: Bytes, content_type: ContentType) -> Result<DynamicImage, ImageError> {
     let mut img = Reader::new(Cursor::new(image_content));
 
     match content_type {
@@ -68,17 +83,4 @@ pub fn format_image(image_content: Bytes, content_type: ContentType) -> Result<D
     }
 
     img.decode()
-}
-
-pub async fn transparent_channel(uri: &str) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>, TransformError> {
-    let (img_content, content_type) = get_image(uri).await?;
-
-    let d_image = format_image(img_content, content_type)?;
-
-    let out = match create_gray_img(&d_image) {
-        Some(a) => a,
-        None => panic!("灰度生成失败！"),
-    };
-
-    Ok(out)
 }
